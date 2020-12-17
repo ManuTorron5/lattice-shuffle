@@ -38,8 +38,8 @@ def Rej(Z, B, sigma, rho):
 
 """
 Gaussian sample
-Given sigma and a shape, returns an np array chosen from the gaussian
-distribution (kind of) with parameter sigma with the given shape
+Given sigma and a shape, returns an np array with the given shape chosen
+from (kind of) the discrete gaussian distribution with parameter sigma 
 """
 
 
@@ -68,6 +68,26 @@ def polyeval(p, x):
 
 """
 Evaluation of polynomial p in point x, where p may have matrix coefficients
+Polynomial is assumed not to have an independent coefficient
+Polynomial p is an array where p[i] = coeff. of X^(i+1)
+"""
+
+
+def polyeval_no_indep_coeff(p, x):
+    part_sum = np.zeros_like(p[0])
+    pow_x = x
+    for coef in p:
+        part_sum += pow_x @ coef
+        pow_x = pow_x * x
+    return part_sum
+
+
+
+
+
+"""
+Evaluation of polynomial p in point x, where p may have matrix coefficients
+Polynomial p is an array where p[i] = coeff. of X^i
 The powers of x are reduced mod q on each iteration
 """
 
@@ -75,6 +95,23 @@ The powers of x are reduced mod q on each iteration
 def polymodeval(p, x, q):
     part_sum = np.zeros_like(p[0])
     pow_x = np.eye(x.shape[0], dtype=int)
+    for coef in p:
+        part_sum += pow_x @ coef
+        pow_x = (pow_x * x) % q
+    return part_sum
+
+
+"""
+Evaluation of polynomial p in point x, where p may have matrix coefficients
+Polynomial is assumed not to have an independent coefficient
+Polynomial p is an array where p[i] = coeff. of X^(i+1)
+The powers of x are reduced mod q on each iteration
+"""
+
+
+def polymodeval_no_indep_coeff(p, x, q):
+    part_sum = np.zeros_like(p[0])
+    pow_x = x % q
     for coef in p:
         part_sum += pow_x @ coef
         pow_x = (pow_x * x) % q

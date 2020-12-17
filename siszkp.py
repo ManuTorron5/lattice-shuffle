@@ -35,7 +35,7 @@ class Prover:
         assert A.shape[1] == S.shape[0]
         self.v = A.shape[1]
 
-        self.rho = 3
+        self.rho = 4
         self.sigma = 12/np.log(self.rho)*s*np.sqrt(self.ell*self.n)
         self.B = math.sqrt(2*self.v)*self.sigma
         # This B is somehow known by the verifier
@@ -44,7 +44,7 @@ class Prover:
         # print("sigma = " + str(self.sigma))
         # print("B = " + str(self.B))
 
-    def calculateW(self, n):
+    def calculateW(self):
         self.Y = gaussian_sample(self.sigma, (self.v, self.n))
         W = np.matmul(self.A, self.Y)
         return W
@@ -65,7 +65,9 @@ class Verifier:
     W = None
     C = None
 
-    def __init__(self, A, T):
+    def __init__(self, lamb, q, A, T):
+        self.lamb = lamb
+        self.q = q
         self.A = A
         self.T = T
         self.W = []
@@ -78,10 +80,10 @@ class Verifier:
         self.C = np.random.randint(2, size=[ell, n])
         return self.C
 
-    def verify(self, Z, B, q):
+    def verify(self, Z, B):
         AZ = self.A @ Z
         TC = self.T @ self.C
-        return np.array_equal(AZ % q, (TC + self.W) % q)\
+        return np.array_equal(AZ % self.q, (TC + self.W) % self.q)\
             and np.all(np.linalg.norm(Z, np.inf, axis=0) <= B)
 
 
@@ -101,7 +103,7 @@ class Proof:
 
     def __init__(self, lamb, q, A, S, T):
         self.prover = Prover(lamb, q, A, S, T)
-        self.verifier = Verifier(A, T)
+        self.verifier = Verifier(lamb, q, A, T)
 
     def run(self):
         abort = True
@@ -112,7 +114,7 @@ class Proof:
         start_time = time.time()
         self.proof_size = 0
 
-        self.W = self.prover.calculateW(self.prover.n)
+        self.W = self.prover.calculateW()
 
         self.proof_size += self.W.size
 
@@ -133,7 +135,7 @@ class Proof:
         # Verification
         B = self.prover.B  # ???
 
-        self.bit = self.verifier.verify(self.Z, B, self.prover.q)
+        self.bit = self.verifier.verify(self.Z, B)
 
         end_time = time.time()
         self.running_time = end_time - start_time
@@ -162,9 +164,9 @@ def ZKP_test():
     q = sp.nextprime(4093)  # Prime for base field Z_q
 
     # Invent matrices A, S, T
-    ell = 11  # Number of equations
-    r = 7  # poly(lambda)
-    v = 231  # poly(lambda)
+    ell = 1000  # Number of equations
+    r = 100  # poly(lambda)
+    v = 10  # poly(lambda)
     # Parameters r, v and l should be chosen by the commitment given N = l*r*v
 
     A = np.random.randint(0, q, size=[r, v])
@@ -180,4 +182,4 @@ def ZKP_test():
     proof.print_stats()
 
 
-# ZKP_test()
+#ZKP_test()

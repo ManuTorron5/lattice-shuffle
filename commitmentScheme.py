@@ -24,10 +24,10 @@ the total elements of the message, generates a commitment key
 def generateCommitmentKey(lamb, p, N):
     # Set parameters as in BBC+18
     # P = self.n*self.k**2*self.m**2*self.p**2
-    # B = P*self.k*self.m*self.n  # B = O(PN)
+    # B = P*self.N  # B = O(PN)
     # Pp = B*P
     r = int(np.ceil(np.log(N)))  # r = O(log n) or O(log N)?
-    q = sp.nextprime(2**25)  # !!!
+    q = sp.nextprime(2**100)  # q = sp.nextprime(Pp*math.sqrt(r)) !!!
     # print("P = " + str(P))
     # print("B = " + str(B))
     # print("Pp = " + str(Pp))
@@ -56,16 +56,16 @@ def generateCommitmentKey(lamb, p, N):
 """
 Commitment method
 Given a message and randomness with shape given by the commitment key
-returns the commitment of the message and the randomness
+returns the commitment of the message
 """
 
 
 def commit(msg, randomness, ck):  # r = randomness
-    p = ck[0]
+    # p = ck[0]
     q = ck[1]
-    r = ck[2]
+    # r = ck[2]
     # n = ck[3]
-    k = ck[4]
+    # k = ck[4]
     A1 = ck[6]
     A2 = ck[7]
 
@@ -121,4 +121,4 @@ def commit_test():
     print("Total execution time:", end_time - start_time, "seconds")
 
 
-# commit_test()
+#commit_test()

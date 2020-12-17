@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 from commitmentScheme import generateCommitmentKey, commit
 from siszkp import Proof
 
-lamb = 128
+
 """
 Commits and proves to one message in Z_q^(kxn)
-with k,n chosen by the commitment
+We assume the message is already shaped
 """
 
 
-def commit_and_prove(msg, randomness, ck):
+def commit_and_prove(msg, randomness, ck, lamb):
 
     committed_message = commit(msg, randomness, ck)
 
@@ -40,24 +40,24 @@ def commit_and_prove(msg, randomness, ck):
 
 """
 Commits and proves to m messages, each in Z_q^(kxn)
-with m,k,n chosen by the commitment
+we assume the message is already shaped
 """
 
 
-def commit_and_prove_all(msg, randomness, ck):
+def commit_and_prove_all(msg, randomness, ck, lamb):
 
-    n, k, m = ck[3], ck[4], ck[5]
+    m = msg.shape[0]
     # msg = np.hstack((msg, np.zeros(n*k*m - msg.size, dtype=int)))
-    msg = np.resize(msg, (m, k, n))
+    # msg = np.resize(msg, (m, k, n))
     # Initialize values with first commitment to get correct shape for com_msg
     com_msg, verification, total_size\
-        = commit_and_prove(msg[0], randomness[0], ck)
+        = commit_and_prove(msg[0], randomness[0], ck, lamb)
     com_msg = [com_msg]
 
     # Commit and prove the rest of the messages
     for i in range(1, m):
 
-        com_msg_i, bit, size = commit_and_prove(msg[i], randomness[i], ck)
+        com_msg_i, bit, size = commit_and_prove(msg[i], randomness[i], ck, lamb)
 
         com_msg = np.append(com_msg, [com_msg_i], axis=0)
         verification = verification and bit
@@ -66,7 +66,7 @@ def commit_and_prove_all(msg, randomness, ck):
     # print("Verification: " +  str(verification))
     # print("Number of elements of communication: " + str(total_size))
 
-    return com_msg, verification, total_size
+    return np.array(com_msg), verification, total_size
 
 
 def commit_and_prove_test():
@@ -87,11 +87,11 @@ def commit_and_prove_test():
 
     msg = np.resize(msg, (m, k, n))
 
-    print(commit_and_prove_all(msg, randomness, ck)[1:])
+    print(commit_and_prove_all(msg, randomness, ck, lamb)[1:])
     # [1:] so it does not show the commitments
 
 
-# commit_and_prove_test()
+#commit_and_prove_test()
 
 """
 Test to check sublinearity of proofs for commitment openings
@@ -103,19 +103,20 @@ communication of each proof
 def sublinearity_test():
     lamb = 128
     p = 4099
-    msg_sizes = [i for i in range(10, 100000, 2500)]
+    msg_sizes = [i for i in range(250, 10001, 250)]
     # msg_sizes = [1000, 2000, 3000, 5000, 7000, 10000, 15000]
     com_sizes = []
-    prevm = 1
     for i in range(len(msg_sizes)):
         # Create random message
         msg = np.random.randint((-p+1)//2, (p-1)//2+1, size=msg_sizes[i])
 
         # Generate commitment key
         ck = generateCommitmentKey(lamb, p, msg.size)
-        # if ck[5]>prevm:
-        #     print(msg_sizes[i])
-        #     prevm = ck[5]
+        
+        n, k, m = ck[3], ck[4], ck[5]
+
+        msg = np.resize(msg, (m, k, n))
+        
         # Generate randomness
         nprime = int(2*ck[2]*math.log(ck[1], ck[0]))
         randomness = np.array([randint((-p+1)//2, (p-1)//2+1)
@@ -123,7 +124,7 @@ def sublinearity_test():
             .reshape(ck[5], ck[4], nprime)
 
         # Run the proof
-        _, bit, communication = commit_and_prove_all(msg, randomness, ck)
+        _, bit, communication = commit_and_prove_all(msg, randomness, ck, lamb)
 
         # Store communication size
         print("Proof", i+1, "of", len(msg_sizes), ":", bit)
@@ -133,8 +134,8 @@ def sublinearity_test():
     plt.plot(msg_sizes, com_sizes, 'bo', msg_sizes, com_sizes, 'b')
     
     plt.show()
-    # for i in range(len(msg_sizes)-1):
-        # print((com_sizes[i+1] - com_sizes[i])/(msg_sizes[i+1]-msg_sizes[i]))
+    for i in range(len(msg_sizes)-1):
+        print((com_sizes[i+1] - com_sizes[i])/(msg_sizes[i+1]-msg_sizes[i]))
 
 
 sublinearity_test()

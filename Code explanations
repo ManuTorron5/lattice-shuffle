@@ -1,0 +1,66 @@
+#util.py
+Archivo con algunas utilidades en el resto de archivos.
+Todas las funciones están explicadas
+Nota: El método gaussian_sample no devuelve exactamente una gausiana discreta, si no una gausiana continua que se redondea a la parte entera. Sage tiene métodos para samplear con gausianas discretas, pero no he conseguido usar Sage con el entorno que estaba usando (spyder)
+
+
+#siszkp.py
+Archivo con la prueba amortizada de BBC+18 (pág 13-14).
+Cosas a tener en cuenta:
+	En BBC+18 solo cuentan la comunicación del prover al verifier
+	Tal y como está ahora no tiene en cuenta la comunicaciçon extra por los aborts, para contarla, descomentar la línea 126
+	Hay que elegir el parámetro rho (en la tesis de Del Pino establece rho=3)
+IMPORTANTE: De alguna manera el verifier tiene que conocer el parámetro B que depende directamente del witness. Tal y como está ahora el prover simplemente envía B al verifier, habría que ver como arreglar eso para que el verifier pueda usar la B.
+
+
+#commitmentScheme.py
+Archivo con el commitment scheme de BBC+18 (pág 10-11)
+El método generateCommitmemntKey genera los parámetros según BBC+18 (pág 25) y devuelve la clave para hacer los commitments
+IMPORTANTE: En BBC+18 la q y la n dependen una de otra. En el código he puesto q = 2**100 pero habría que calcularla de acuerdo a los otros parámteros. Quizá con el artículo de 2020 se pueda calcular bien.
+El método commit recibe un mensaje, una randomness y una clave y devuelve el commit del mensaje, con valores entre -q/2 y q/2.
+SE ASUME QUE EL MENSAJE YA TIENE LA FORMA DEFINIDA POR LA CLAVE
+
+
+#commitAndProve.py
+Archivo que permite hacer commitments y probarlos
+commit_and_prove hace commit con el método de commitmentScheme.py de un mensaje y genera una prueba de siszkp.py
+commit_and_prove_all hace lo mismo pero para m mensajes
+SE ASUME QUE LOS MENSAJEs YA TIENE LA FORMA DEFINIDA POR LA CLAVE
+
+
+#productArgument.py
+Archivo con el Product Argument de BBC+18 (pág 25-29)
+Las variables con "bf" delante son las que en el paper están en negrita
+Bmm1 es B_(m+1)
+PROBLEMAS:
+	Algunos métodos (por ejemplo, los que caluclan normas euclídeas (linalg.norm)) dan problemas al cambiar los parámetros. Creo que se debe a que hay overflows por ser enteros muy grandes
+	El commitment scheme genera una clave con m, k y n, pensada para hacer commit de N valores en m matrices kxn, pero en el protocolo se hacen commitments de matrices 2kxn(Aizeros, Bizeros), matrices sueltas (A0 y Bmm1) o 2m matrices (Hl)
+	También el commitment está pensado para valores entre 0 y p, pero el valor de sigma1 hace que las matrices A0 y Bmm1 tengan valores más grandes que p
+	Algunas ecuaciones dan False en lugar de True. No he conseguido encontrar el fallo que produce esto, pero puede que esté relacionado con el problema anterior.
+
+DETALLES: 
+	En el paper indica que las pruebas amortizadas de los commitments se hacen al final en la verificación. Ahora mismo se hacen en el momento en el que se hace el commit, pero se podría cambiar.
+	El prover tiene que hacer algunos Rejs que están desactivados. En el paper utiliza un parámetro e (relacionado con la rho de siszkp) que no aparece por ningún lado.
+	Al hacer los commitments bfAi y bfBi, la mitad de cada matriz es un commitment trivial. Se podría hacer commitment de Ai y Bi y luego pegar los ceros. Tal y como está ahora, primero pega los ceros y luego hace el commitment.
+
+#linearConstraintArgument (WIP)
+Archivo con el Linear Constraint Argument de BBC+18 (pág 35-39)
+Similar a productArgument
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
